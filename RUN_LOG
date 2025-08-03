@@ -1,0 +1,35 @@
+#00:59
+#pseudo alignment algorithm (no extensions)
+python main.py --task reference --genome genomes.fa --reference reference.kdb
+python main.py --task dumpref --reference reference.kdb
+cat reference_summary.json
+python main.py --task align --reference reference.kdb --reads reads.fastq --alignment results.json
+cat results.json
+
+
+#02:07
+#EXTQUALITY (with existing reference DB) 
+python main.py --task align --reference reference.kdb --reads reads.fastq --alignment results.json --min-read-quality 5
+
+
+#02:52
+#EXTREVCOMP (with existing reference DB)
+python main.py --task align --reference reference.kdb --reads reads_rev.fastq --alignment results.json --reverse-complement
+cat results.json
+
+
+
+#03:23
+#EXTCOVERAGE (with building a new DB)
+python main.py --task reference --genome genomes_cov.fa --reference reference_cov.kdb
+python main.py --task align --reference reference_cov.kdb --reads reads_cov.fastq --alignment results.json --coverage --min-coverage 1
+cat results.json
+
+
+#04:10
+#EXTSIM
+python main.py --task reference --genome genomes.fa --reference reference_filtered.kdb --filter-similar --similarity-threshold 0.9
+
+
+
+
