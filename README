@@ -1,48 +1,45 @@
-ההרחבות שמימשתי-
-4.1- Quality Filtering
-מסננת קריאות וKmers בעלי איכות נמוכה כדי לשפר את הדיוק של היישור.
-הסבר- 
- האיכות הממוצעת של כל קריאה מחושבת, (_calculate_quality_mean()).
-אם האיכות נמוכה מהסף שהמשתמש הגדיר (--min-read-quality), הקריאה לא נכללת ביישור.
-
-4.2 Reverse Complement
-מאפשרת יישור גם לרצפים משלימים הפוכים, כך שאם קריאה תואמת לרצף הפוך משלים בגנום – היא עדיין תזוהה.
-הסבר-
-ברצף DNA קריאות יכולות להגיע מכל strand של הסליל הכפול, מאחר וכל strand משלים את השני ופועל בכיוון מנוגד,
-ניתן לקרוא קטע גם בצורת ההשלמה ההפוכה שלו (A לT ולהפך, G לC ולהפך ובכיוון המנוגד).
-reverse_complement() הופכת כל קריאה לרצף המשלים ההפוך.
-find_matches() משווה הן לרצף המקורי והן לרצף ההפוך.
-
+Implemented Extensions
+4.1 Quality Filtering
+Reads and k-mers with low quality scores are filtered out to improve alignment accuracy.
+Explanation:
+The average quality of each read is computed using the _calculate_quality_mean() function.
+If the quality falls below the threshold specified by the user (--min-read-quality), the read is excluded from the alignment process.
+4.2 Reverse Complement Support
+Enables alignment of reads against reverse-complemented genome sequences, ensuring detection of matches on both DNA strands.
+Explanation:
+Since reads may originate from either strand of the DNA double helix, alignment must account for both the original and reverse complement of each read.
+The reverse_complement() function transforms each read into its reverse-complemented sequence, replacing A↔T and G↔C while reversing the order.
+find_matches() compares each read to both orientations to ensure comprehensive matching.
 4.3 Coverage Tracking
-סופרת כמה קריאות מיושרות לכל אזור בגנום, כדי להעריך את הכיסוי.
-הסבר-
-initialize_coverage() מגדירה מבנה נתונים לכל גנום.
-find_matches() מעדכנת את מספר הפגיעות לכל גנום.
-save_coverage_data() שומרת את תוצאות הכיסוי לקובץ JSON.
-
+Tracks how many reads align to each genome region, providing insight into sequence coverage.
+Explanation:
+The initialize_coverage() function sets up a data structure for tracking coverage across all reference genomes.
+find_matches() updates the hit count for each genome.
+save_coverage_data() exports the final coverage statistics to a JSON file.
 4.4 Genome Similarity Filtering
-מונעת שמירה של גנומים כמעט זהים, כדי למנוע בלבול ביישור.
-הסבר-
-filter_similar_genomes() מחשבת דמיון בין גנומים על סמך מספר ה-k-mers המשותפים.
-אם שני גנומים חופפים ביותר מסף מסוים (--similarity-threshold), אחד מהם נמחק.
+Removes nearly identical genomes from the reference database to reduce ambiguity and noise during alignment.
+Explanation:
+The filter_similar_genomes() function calculates pairwise similarity between genomes based on shared k-mers.
+If two genomes exceed a specified similarity threshold (--similarity-threshold), one is discarded.
+This helps avoid redundant alignments and improves the clarity of alignment results.
 
+Design Decisions
+1. Choice of K-mer Length (K = 31)
+A k-mer length of 31 was chosen based on common practices in bioinformatics tools such as SPAdes, Kraken, and KMC.
+This length balances sensitivity (capturing short sequences) with specificity (reducing random matches).
+While longer k-mers improve accuracy, they may reduce the likelihood of detecting partial or noisy matches.
+2. Database Storage Format
+The reference database is stored in a dedicated KDB (K-mer Database) format to allow fast and efficient lookups.
+This structure enables quick retrieval of matching genomes for any given k-mer without scanning the entire dataset.
+3. Reverse Complement Handling
+Instead of storing precomputed reverse-complement sequences for every genome, the comparison is performed dynamically at runtime.
+This approach significantly reduces memory usage while maintaining alignment accuracy.
+4. Filtering Similar Genomes
+Genome similarity is computed using Jaccard similarity based on shared k-mer sets.
+If the similarity between two genomes exceeds a predefined threshold, one of them is excluded.
+This prevents redundancy and reduces false-positive alignments due to overlapping references.
 
+## Video Presentation
 
-חלטות תכנון
-1. בחירת גודל K-mer (31) -
-נעשה שימוש נרחב ב-K=31 בתחום הביואינפורמטיקה, כולל בכלים כמו SPAdes, Kraken, KMC.  
-גודל K-mer של 31 נבחר כמקדם בין רגישות (זיהוי קטעים קצרים) לבין ייחודיות (מניעת התאמות מקריות).
-K-mers ארוכים יותר מספקים התאמות מדויקות יותר אך מקטינים את הסיכוי למציאת התאמות חלקיות.
-
-2. אחסון מסד הנתונים- 
-מסד הנתונים נשמר בפורמט KDB (K-mer database) כדי לאפשר חיפוש יעיל ומהיר של התאמות.
-מבנה זה מאפשר שליפה מהירה של הגנומים המכילים כל K-mer מבלי לסרוק את כל מסד הנתונים.
-
-3. טיפול ברוורס קומפלימנט-
-במקום לאחסן מראש את כל הרצפים בצורתם ההופכית, הבדיקה מתבצעת באופן דינמי בעת הריצה.
-פתרון זה חוסך זיכרון תוך שמירה על דיוק בהשוואה בין רצפים.
-
-4. סינון גנומים דומים-
-חישוב הדמיון בין גנומים מתבצע באמצעות דמיון Jaccard על בסיס קבוצות ה-K-mers.
-גנום מוסר אם הדמיון בינו לבין גנום אחר חוצה סף מוגדר מראש.
-כך נמנעת כפילות שעלולה להטות את תוצאות היישור ולגרום לריבוי התאמות לא מדויקות.
+A short explanation and demonstration of the tool is available here:  
+[Watch the video] https://www.youtube.com/watch?v=904jeoKXPoI
